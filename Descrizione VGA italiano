@@ -1,24 +1,24 @@
 PROGETTO VGA:
 Scheda vga realizzata solo con componenti discreti per generare segnale sync completo di buffer video.
-Lo scopo Ë quella di capire il funzionamento dell' elettronica digitale e creare un computer completo a 8 bit
+Lo scopo √® quella di capire il funzionamento dell' elettronica digitale e creare un computer completo a 8 bit
 autocostruito che necessita di una scheda video per l'output.
 Possiamo usare qualsiasi cpu, tipo arduino uno usato nel mio progetto, ma qualsiasi altra cpu esistente o da costruire.
-La scheda Ë realizzata su breadboard e composta dal generatore di segnale, dac, e dal buffer video.
+La scheda √® realizzata su breadboard e composta dal generatore di segnale, dac, e dal buffer video.
 Dac formato da 6 resistenze per una palette di 64 colore (6 bit). Gli ultimi 2 bit non sono usati.
 
 La scheda simula una risoluzione di 800x600 60 hz. I tempi della scansione orizzontale sono abbassati in un quarto
 per ottenere 200x600 60 hz, ma pilotata da un clock al quarzo attivo da 10Mhz.
-La ram video gestisce 200x150 pixel ovvero 30000 pixel e al momento Ë possibile scrivere in ram 628 pixel per frame durante la 
+La ram video gestisce 200x150 pixel ovvero 30000 pixel e al momento √® possibile scrivere in ram 628 pixel per frame durante la 
 fase della durata del segnale basso SyncH che dura 3200ns, ovvero 628 pixel x 60 frame= 37.680 pixel al secondo di scrittura.
 
-La memoria video Ë accessibile in scrittura solo durante la fase attiva del segnale SyncH (livello basso),che ha una durata di circa 3200 ns per ogni linea.
+La memoria video √® accessibile in scrittura solo durante la fase attiva del segnale SyncH (livello basso),che ha una durata di circa 3200 ns per ogni linea.
 
 
-Questa finestra temporale rappresenta il periodo in cui la scheda Ë pronta a ricevere dati dalla CPU,
+Questa finestra temporale rappresenta il periodo in cui la scheda √® pronta a ricevere dati dalla CPU,
 ma non implica che la CPU sia in grado di sfruttare completamente tutta la banda disponibile.
 
 
-Il numero effettivo di pixel scrivibili dipende esclusivamente dalla velocit‡ della CPU e dallíimplementazione software.
+Il numero effettivo di pixel scrivibili dipende esclusivamente dalla velocit√† della CPU e dall‚Äôimplementazione software.
 
 Il range di "memorizzazione" dei pixel si puo facilmente ampliare aggiungendo altri componenti ovvero altra logica di controllo.
 La fase di blank orizzontale dura 6400ns per 628 linee per 60 frame.
@@ -83,30 +83,30 @@ Composto da:
 Presente un Bus indirizzo diviso in 2 gruppi da 8 piste(8bit) collegati ai pin indirizzo della ram.
 Presente un bus dati 8 piste condiviso con un 74HC574 (colore) e un altro identico del DAC.
 
-Un gruppo bus (chiamato X) Ë condiviso con un 74HC574 e un buffer 74HC244 il quale condivide il contatore linea orizzontale.
-Un gruppo bus (chiamato Y) Ë condiviso con un 74HC574 e un buffer 74HC244 il quale condivide il contatore linea verticale.
-Il contatore verticale 74HC161, poichË conta da 1 a 628 utilizzando 10 bit, e servono solo 8 bit per rappresentare un numero da 1 a 150, 
+Un gruppo bus (chiamato X) √® condiviso con un 74HC574 e un buffer 74HC244 il quale condivide il contatore linea orizzontale.
+Un gruppo bus (chiamato Y) √® condiviso con un 74HC574 e un buffer 74HC244 il quale condivide il contatore linea verticale.
+Il contatore verticale 74HC161, poich√® conta da 1 a 628 utilizzando 10 bit, e servono solo 8 bit per rappresentare un numero da 1 a 150, 
 vengono utilizzati solo i primi 8 bit del contatore partendo dal 10decimo bit piu significativo, escludendo i primi 2 meno significativi.
-Di conseguenza i 600 pixel visti dal diplay, vengono in realt‡ generati 150 pixel, ovvero ogni pixel viene 4 volte duplicato per raggiungere i 600 pixel.
+Di conseguenza i 600 pixel visti dal diplay, vengono in realt√† generati 150 pixel, ovvero ogni pixel viene 4 volte duplicato per raggiungere i 600 pixel.
 
 Gli 8 pin dati della ram (essendo una ram statica con parola da 8 bit) viene condivisa con il terzo registro 74HC574 per la gestione del colore e con un altro
 registro sempre 74HC574 per la gestione del DAC.
 
 I 2 buffer 74HC244 e i 2 registri per la condivisione degli indirizzi vengono portati in alta impedenza dalla scheda stessa in questo modo:
 il latch del 74LS290, quello che gestisce Blank orizzontale (200-263) agisce sull' alta impedenza dei buffer, per scollegare i contatori dalla ram.
-Quando Ë alto porta in alta impedenza i buffer e agisce sul Pin OE della ram abilitando o meno la modalit‡ READ.
+Quando √® alto porta in alta impedenza i buffer e agisce sul Pin OE della ram abilitando o meno la modalit√† READ.
 
 
-Il sync orizzontale  gestito sempre dal 74LS279 (210-242) e invertito da NOT, agisce sull' alta impedenza dei 3 registri X-Y-colore e durante questa fase la cpu puÚ registrare i pixel.
-La cpu o arduino per poter registrare i pixel deve leggere lo stato di questo segnale ovvero quando Ë low puÚ registrare i pixel, quando Ë alto i 3 registri 
+Il sync orizzontale  gestito sempre dal 74LS279 (210-242) e invertito da NOT, agisce sull' alta impedenza dei 3 registri X-Y-colore e durante questa fase la cpu pu√≤ registrare i pixel.
+La cpu o arduino per poter registrare i pixel deve leggere lo stato di questo segnale ovvero quando √® low pu√≤ registrare i pixel, quando √® alto i 3 registri 
 sono in alta impedenza.
 
 E' presente un bus input da 8 piste condiviso con gli 8 input dei 3 registri (x-Y-colore)
 Questo bus viene gestito dalla cpu o arduino:
-In qualsiasi momento, indipendentemente dal periodo di blank della scheda video, Ë possibile registrare gli indirizzi X-Y e il colore trasmettendo in parallelo gli 8 bit
+In qualsiasi momento, indipendentemente dal periodo di blank della scheda video, √® possibile registrare gli indirizzi X-Y e il colore trasmettendo in parallelo gli 8 bit
 necessari e inviare un segnale di clock al rispettivo registro per salvare il dato.
 Per salvare il pixel con il rispettivo colore, dopo aver salvato le 3 informazioni necessarie X-Y-Colore (di quest'ultimo vengono usati solo i primi 6 bit),
-bisogna inviare il segnale WE tipo basso alla ram per il savataggio, ma solo durante la fase attiva del segnale Sync H spiegato prima la cui durata Ë di 3200ns per 628 linee x 60 frame al secondo.
+bisogna inviare il segnale WE tipo basso alla ram per il savataggio, ma solo durante la fase attiva del segnale Sync H spiegato prima la cui durata √® di 3200ns per 628 linee x 60 frame al secondo.
 
 Per la gestione dei Pin Arduino:
 Pin 0-1-2-3-4-5-6-7 per la gestione del bus indirizzo e dati/colore.
@@ -123,7 +123,7 @@ DAC realizzato su una breadboard composta da:
 3 resistenze 680 ohm
 
 Il 74HC574 campiona a 10 mhz l' output della ram per gestire il ritardo di propagazione della ram stessa.
-Questo registro condivide il bus dati con il registro colore ed Ë sempre in bassa impedenza.Solo quello del registro colore viene portato in alta impedenz quando necessario.
+Questo registro condivide il bus dati con il registro colore ed √® sempre in bassa impedenza.Solo quello del registro colore viene portato in alta impedenz quando necessario.
 
 Le porte AND ricevono i 6 bit colore dal registro 74HC574 e il segnale NOPIXEL dal generatore di Sync per portare la tensione dei pin colore 1-2-3 (RGB) del cavo VGA a GND ovvero a zero
 durante la fase di blank orizzontale e verticale.
