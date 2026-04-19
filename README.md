@@ -1,4 +1,8 @@
 VGA PROJECT: Discrete Component VGA Card
+
+[Demo VGA Project YouTube](https://youtube.com/shorts/xp8ev63LN8c)
+[Demo VGA TTL Video Card](https://youtube.com/shorts/Ok6mRmr4r1A)
+
 A VGA board built entirely from discrete components to generate a full sync signal and video buffer.
 The goal is to understand digital electronics and create a self-built 8-bit computer that requires a video card for output.
 Any CPU can be used (such as the Arduino Uno used in this project), as well as any existing or custom-built CPU.
