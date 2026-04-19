@@ -65,19 +65,19 @@ The 74HC574 samples the RAM output at 10 MHz to compensate for RAM propagation d
 The resistor pairs (680Ω for MSB, 1500Ω for LSB) create the voltage levels for each RGB channel. VGA pins 5, 6, 7, 8, and 10 are tied to common GND.
 ________________________________________
 
-RITARDI PiPeline:
+PiPeline:
 ----------------------------------------------------------------
 DAC/74HC574     CONTATORE h   74HC574/LS279     74HC574 VGA
 ----------------------------------------------------------------	
-262	             	263	           262	           261
+262	             	263	           262	            261
 263	   	          264            263              262
-264	   	          1              264             263   
-1	               	2	             1 	             264   pixel view
-2	   	            3              2	             1
-3             	  4	             3	             2
-...	             	...           ...              ...
-199        	      200           199              198
-200         	   201            200              199
-201         	  202             201              200    no pixel
-...	   	        ...            ...               ...
+264	   	          1              264              263   
+1	               	2	             1 	              264   pixel view
+2	   	            3              2	              1
+3             	  4	             3	              2
+...	             	...            ...              ...
+199        	      200            199              198
+200         	    201            200              199
+201         	    202            201              200    no pixel
+...	   	          ...            ...              ...
 
