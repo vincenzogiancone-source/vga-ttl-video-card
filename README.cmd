@@ -42,7 +42,7 @@ Additional Components:
 ________________________________________
 PHASE 2: Video Buffer
 Built on 2 breadboards.
-•	Logic: 3x 74HC574 registers, 3x 74HC244 buffers.
+•	Logic: 3x 74HC574 registers, 2x 74HC244 buffers.
 •	Memory: 1x 6C1008 64KB SRAM (55ns).
 The Address Bus is split into two 8-bit groups (X and Y).
 •	Group X: Shared between a 74HC574 and a 74HC244 (horizontal line counter).
