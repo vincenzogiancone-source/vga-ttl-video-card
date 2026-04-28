@@ -1,5 +1,6 @@
 VGA PROJECT: Discrete Component VGA Card
 
+https://youtube.com/shorts/Y8oaad7MIII?feature=share
 [Demo VGA Project YouTube](https://youtube.com/shorts/xp8ev63LN8c)
 [Demo VGA TTL Video Card](https://youtube.com/shorts/Ok6mRmr4r1A)
 
