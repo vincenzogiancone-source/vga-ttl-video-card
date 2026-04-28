@@ -1,0 +1,482 @@
+typedef struct {
+  int8_t x0, y0, x1, y1;
+} Segment;
+
+Segment A[] = {
+  {0,0, 3,10},
+  {3,10, 6,0},
+  {1,5, 5,5}
+};
+int A_len = 3;
+int A_pos=20;
+int A_colo=10;
+
+Segment R[] = {
+  {0,0, 0,10},
+  {0,10, 6,10},
+  {6,10, 6,5},
+  {6,5, 0,5},
+  {0,5, 6,0}
+};
+int R_len = 5;
+int R_pos=45;
+int R_colo=24;
+
+Segment D[] = {
+  {0,0, 0,10},
+  {0,10, 6,8},
+  {6,8, 6,2},
+  {6,2, 0,0}
+};
+int D_len = 4;
+int D_pos=70;
+int D_colo=60;
+
+Segment U[] = {
+  {0,10, 0,2},
+  {0,2, 3,0},
+  {3,0, 6,2},
+  {6,2, 6,10}
+};
+int U_len = 4;
+int U_pos=95;
+int U_colo=10;
+
+Segment I[] = {
+  {3,0, 3,10},
+  {0,0, 6,0},
+  {0,10, 6,10}
+};
+int I_len = 3;
+int I_pos=120;
+int I_colo=24;
+
+Segment N[] = {
+  {0,0, 0,10},
+  {0,10, 6,0},
+  {6,0, 6,10}
+};
+int N_len = 3;
+int N_pos=145;
+int N_colo=60;
+
+Segment O[] = {
+  {0,0, 0,10},
+  {0,10, 6,10},
+  {6,10, 6,0},
+  {6,0, 0,0}
+};
+int O_len = 4;
+int O_pos=170;
+int O_colo=10;
+
+unsigned long lastChange = 0;
+int fase = 0;
+
+uint8_t sfondocolore = 0;
+
+unsigned long lastime[3];
+bool colliso[3];
+
+uint8_t attivi=1; // 1-2-3 oggetti attivi
+
+uint8_t minX[3];
+uint8_t maxX[3]; 
+uint8_t minY[3];
+uint8_t maxY[3];
+
+
+uint8_t dirprof=0;
+int8_t profondita[3]= {10,10,10};
+
+ int16_t oggetto1[8][2] = {
+  // faccia davanti 
+  {-20, -20},
+  { 20, -20},
+  { 20,  20},
+  {-20,  20},
+
+  // faccia dietro
+  {-10, -10},
+  { 10, -10},
+  { 10,  10},
+  {-10,  10}
+};
+
+#define scala 128
+ int16_t tabseno[91];
+
+//posizione oggetto 
+uint16_t cx[3] = {100,40,160};
+uint16_t cy[3]= {75,75,75};
+uint16_t angolo[3] = {0,140,40};
+uint8_t coloreoggetto[3]={10,24,60};
+
+//senso direzione oggetto +1 0 -1
+int8_t dirx[3] = {0,0,0};
+int8_t diry[3] = {0,0,0};
+
+void setup() {
+
+DDRD = 0b11111111;   // D0–PD7 output 8 bit dati
+PORTD = 0b00000000; //LOW all’avvio
+
+// PB3 PB2, PB1, PB0   -    D11 D10    D9 D8 - 
+//	                         WE  Color  Y   X
+
+DDRB =  0b00001111;   // PB4-PB0 output
+PORTB= 0b00001000;  //  all’avvio  WE in alto 
+
+DDRC = 0b00000000;    // PC0 (A0) input
+
+resetvideo();
+tabellaseno();
+lastChange = millis();
+}
+
+void resetvideo () {
+
+PORTD = sfondocolore;
+PORTB |= 0b00000100;  // Porta ALTO solo il clock Colore (Pin 10)
+PORTB &= ~0b00000100; // Riporta BASSO il clock Colore
+
+for ( uint8_t riga = 0; riga <= 150; riga++) {
+PORTD = riga;
+PORTB |= 0b00000010;  // Porta ALTO solo il clock Y (Pin 9)
+PORTB &= ~0b00000010; // Riporta BASSO il clock Y
+
+for ( uint8_t colonna = 1; colonna <= 200; colonna++) {
+PORTD = colonna;
+PORTB |= 0b00000001;  // Porta ALTO solo il clock X (Pin 8)
+PORTB &= ~0b00000001; // Riporta BASSO il clock 
+
+// gestione WE
+while(!(PINC & 1)); // rimane nel ciclo fin quando OE è basso
+while(PINC & 1);  // rimane nel ciclo fin quando OE è alto 
+
+PORTB &= ~0b00001000; // WE LOW (D11)
+//asm volatile ("nop\nnop");
+PORTB |=  0b00001000;  // WE HIGH
+
+}}
+
+}
+
+void tabellaseno() {
+for (uint8_t i= 0; i <= 90; i++) {
+tabseno[i] = sin(i * 3.14159265 / 180.0) * scala;
+}
+}
+
+int8_t calcolaseno(uint16_t a) {
+  if (a <= 90) return tabseno[a];
+  if (a <= 180) return tabseno[180 - a];
+  if (a <= 270) return -tabseno[a - 180];
+  return -tabseno[360 - a];
+}
+
+void pixelram(uint8_t registroX,uint8_t registroY, uint8_t colore){
+
+PORTD = colore;
+PORTB |= 0b00000100;  // Porta ALTO solo il clock Colore (Pin 10)
+PORTB &= ~0b00000100; // Riporta BASSO il clock Colore
+
+PORTD = registroY;
+PORTB |= 0b00000010;  // Porta ALTO solo il clock Y (Pin 9)
+PORTB &= ~0b00000010; // Riporta BASSO il clock Y
+
+PORTD = registroX;  
+PORTB |= 0b00000001;  // Porta ALTO solo il clock X (Pin 8)
+PORTB &= ~0b00000001; // Riporta BASSO il clock X
+
+//while(!(PINC & 1)); // rimane nel ciclo fin quando OE è basso
+while(PINC & 1);  // rimane nel ciclo fin quando OE è alto 
+
+PORTB &= ~0b00001000; // WE LOW (D11)
+//asm volatile ("nop\nnop");
+PORTB |= 0b00001000;  // WE HIGH
+}
+
+
+void loop() {
+
+static int16_t vertici[3][8][2];
+static int16_t precvertici[3][8][2];
+static long intervallo=4000;
+
+int16_t x;
+int16_t y;
+
+unsigned long now = millis();
+if (now - lastime[2] >= 500) colliso[2]=false;
+if (now - lastime[1] >= 500) colliso[1]=false;
+if (now - lastime[0] >= 500) colliso[0]=false;
+
+//fase
+if (now - lastChange >= intervallo) {
+    lastChange = now;
+    fase++;
+    if (fase > 6) fase = 0,intervallo=4000, dirprof=0, resetvideo(); 
+
+// esecuzione fase corrente
+  switch (fase) {
+
+    case 0:
+   diry[0]=0,dirx[0]=0;
+   diry[1]=0,dirx[1]=0;
+   diry[2]=0,dirx[2]=0;
+   cx[0]=100,cy[0]=75,cx[1]=40;
+   cy[1]=75, cx[2]=160, cy[2]=75;
+      attivi=1;
+      break;
+      
+   case 1:
+     attivi=2;   
+      break;
+
+    case 2:
+      attivi=3;
+      break;
+
+    case 3:
+    diry[1]=-1;
+    diry[2]=1;
+    intervallo=5000;
+      break;
+
+   case 4:
+  diry[0]=1,dirx[0]=1;
+   diry[1]=-1,dirx[1]=1;
+   diry[2]=1,dirx[2]=-1;
+    intervallo=8000;
+      break;
+
+case 5:
+   dirprof=1;
+    intervallo=10000;
+      break;
+
+case 6:
+resetvideo();
+drawLetter(A, A_len,A_pos,A_colo); 
+drawLetter(R, R_len,R_pos,R_colo); 
+drawLetter(D, D_len,D_pos,D_colo); 
+drawLetter(U, U_len,U_pos,U_colo);
+drawLetter(I, I_len,I_pos,I_colo);
+drawLetter(N, N_len,N_pos,N_colo);
+drawLetter(O, O_len,O_pos,O_colo);
+break;
+  } }
+
+if (fase==6) {
+    return;   // esce subito da loop()
+  }
+
+if (dirprof==0) profondita[0]=10,profondita[1]=10,profondita[2]=10;
+if (dirprof==1) profondita[0]++,profondita[1]--,profondita[2]--;
+if (dirprof==2) profondita[0]--,profondita[1]++,profondita[2]++;
+if (profondita[0]==40)  dirprof=2;
+if (profondita[0]==5)  dirprof=1;
+
+for (uint8_t sel = 0; sel < attivi; sel++) {
+
+int16_t coseno = angolo[sel] + 90; 
+if (coseno >= 360) coseno -= 360;
+
+int16_t s = calcolaseno(angolo[sel]);
+int16_t c = calcolaseno(coseno); 
+
+for (uint8_t i = 0; i < 8; i++) {
+
+  x = oggetto1[i][0];
+  y = oggetto1[i][1];
+
+  // decide fronte o retro
+  int16_t z = (i < 4) ? -profondita[sel] : profondita[sel];
+
+  // --- ROTAZIONE X ---
+  int16_t y1 = ((y * c) - (z * s)) / scala;
+  //int16_t z1 = ((y * s) + (z * c)) / scala; // non usato
+
+  // --- ROTAZIONE Z ---
+  int16_t xr = ((x * c) - (y1 * s)) / scala;
+  int16_t yr = ((x * s) + (y1 * c)) / scala;
+
+int16_t A = xr + cx[sel];
+int16_t B = yr + cy[sel];
+
+if (A >= 200) dirx[sel] = -1; 
+if (B >= 150) diry[sel] = -1; 
+if (A <= 1)   dirx[sel] = 1;
+if (B <= 1)   diry[sel] = 1;
+
+  vertici[sel][i][0] = A;
+  vertici[sel][i][1] = B;
+
+}
+
+// RETRO
+for (uint8_t i=4;i<8;i++) {
+  uint8_t n = (i==7)?4:i+1;
+
+  traccialinea(precvertici[sel][i][0], precvertici[sel][i][1],
+               precvertici[sel][n][0], precvertici[sel][n][1],
+               sfondocolore);
+
+  traccialinea(vertici[sel][i][0], vertici[sel][i][1],
+               vertici[sel][n][0], vertici[sel][n][1],
+               coloreoggetto[sel]);
+}
+
+// FRONTE
+for (uint8_t i=0;i<4;i++) {
+  uint8_t n = (i==3)?0:i+1;
+
+traccialinea(precvertici[sel][i][0], precvertici[sel][i][1],
+               precvertici[sel][n][0], precvertici[sel][n][1],
+               sfondocolore);
+
+  traccialinea(vertici[sel][i][0], vertici[sel][i][1],
+               vertici[sel][n][0], vertici[sel][n][1],
+               coloreoggetto[sel]);
+}
+
+// COLLEGAMENTI
+for (uint8_t i=0;i<4;i++) {
+
+  traccialinea(precvertici[sel][i][0], precvertici[sel][i][1],
+               precvertici[sel][i+4][0], precvertici[sel][i+4][1],
+               sfondocolore);
+
+  traccialinea(vertici[sel][i][0], vertici[sel][i][1],
+               vertici[sel][i+4][0], vertici[sel][i+4][1],
+               coloreoggetto[sel]);
+}
+
+// SALVA
+for (uint8_t i=0;i<8;i++) {
+  precvertici[sel][i][0]=vertici[sel][i][0];
+  precvertici[sel][i][1]=vertici[sel][i][1];
+}
+
+//movimento
+cx[sel]= cx[sel] + dirx[sel];
+cy[sel]= cy[sel] + diry[sel];
+
+//angolo change
+angolo[sel]++; 
+if (angolo[sel] >= 360) angolo[sel] = 0; 
+
+//gestione MIN MAX x collosione 
+minX[sel] = vertici[sel][0][0];
+maxX[sel] = vertici[sel][0][0];
+minY[sel] = vertici[sel][0][1];
+maxY[sel] = vertici[sel][0][1];
+for (uint8_t i = 1; i < 8; i++) {
+
+  if (vertici[sel][i][0] < minX[sel]) minX[sel] = vertici[sel][i][0];
+  if (vertici[sel][i][0] > maxX[sel]) maxX[sel] = vertici[sel][i][0];
+  if (vertici[sel][i][1] < minY[sel]) minY[sel] = vertici[sel][i][1];
+  if (vertici[sel][i][1] > maxY[sel]) maxY[sel] = vertici[sel][i][1];
+
+}}
+
+//collsione
+if (collisione(0, 1) & !(colliso[0] & colliso[1])) {
+  dirx[0] = -dirx[0];
+  diry[0] = -diry[0];
+  dirx[1] = -dirx[1];
+  diry[1] = -diry[1];
+cx[0]= cx[0] + dirx[0];
+cy[0]= cy[0] + diry[0];
+cx[1]= cx[1] + dirx[1];
+cy[1]= cy[1] + diry[1];
+colliso[0]=true;
+colliso[1]=true;
+lastime[0]=now;
+lastime[1]=now;
+}
+
+if (collisione(0, 2) & !(colliso[0] & colliso[2])) {
+  dirx[0] = -dirx[0];
+  diry[0] = -diry[0];
+  dirx[2] = -dirx[2];
+  diry[2] = -diry[2];
+  cx[2]= cx[2] + dirx[2];
+  cy[2]= cy[2] + diry[2];
+  cx[0]= cx[0] + dirx[0];
+  cy[0] = cy[0] +diry[0];
+  colliso[0]=true;
+  colliso[2]=true;
+  lastime[0]=now;
+  lastime[2]=now;
+} 
+
+if (collisione(1, 2) & !(colliso[1] & colliso[2])) {
+  dirx[1] = -dirx[1];
+  diry[1] = -diry[1];
+  dirx[2] = -dirx[2];
+  diry[2] = -diry[2];
+  cx[1]= cx[1] + dirx[1];
+  cy[1]= cy[1] + diry[1];
+   cx[2]= cx[2] + dirx[2];
+  cy[2]= cy[2] + diry[2];
+  colliso[1]=true;
+  colliso[2]=true;
+  lastime[1]=now;
+  lastime[2]=now;
+}
+
+
+}
+
+
+void traccialinea (uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, uint8_t setcolor) {
+  int dx = abs(x1 - x0);
+  int dy = abs(y1 - y0);
+  int sx = (x0 < x1) ? 1 : -1;
+  int sy = (y0 < y1) ? 1 : -1;
+  int err = dx - dy;
+
+  if (x0 < 0 || x0 > 200 || y0 < 0 || y0 > 150) return;
+  if (x1 < 0 || x1 > 200 || y1 < 0 || y1 > 150) return;
+
+  while (true) {
+
+ pixelram(x0,y0,setcolor);
+
+if (x0 == x1 && y0 == y1) break;
+
+    int e2 = 2 * err;
+    if (e2 > -dy) {
+      err -= dy;
+      x0 += sx;
+    }
+    if (e2 < dx) {
+      err += dx;
+      y0 += sy;
+    }
+  }
+}
+
+bool collisione(uint8_t a, uint8_t b) {
+
+  if (maxX[a] < minX[b]) return false;
+  if (minX[a] > maxX[b]) return false;
+  if (maxY[a] < minY[b]) return false;
+  if (minY[a] > maxY[b]) return false;
+
+  return true;
+}
+
+void drawLetter(Segment *seg, int len,int posiz,int colo) {
+  for (int i = 0; i < len; i++) {
+    traccialinea(
+      posiz+ seg[i].x0 * 3,
+      85 - seg[i].y0 * 3,
+      posiz + seg[i].x1 * 3,
+      85 - seg[i].y1 * 3,
+      colo
+    );
+  }
+}
